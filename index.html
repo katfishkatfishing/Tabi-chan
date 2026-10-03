@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabi-chan</title>    <!-- Hello World! -->
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <link href='https://fonts.googleapis.com/css?family=Fredoka' rel='stylesheet'>
     <style>
         body {
@@ -14,24 +16,63 @@
             color: rgb(255, 255, 255);
             margin: 0; 
             padding: 20px;
-
-            
-
-
-
-
-
-
-
-
-
-
-
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         h1 { margin-bottom: 5px; }
         #statusTag { color: rgb(204, 204, 204); margin-bottom: 25px; }
         
+        /*buttons*/
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background-color 0.3s, opacity 0.3s ease;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary { background: rgb(0, 123, 255); color: rgb(255, 255, 255); }
+        .btn-primary:hover:not(:disabled) { background: rgb(0, 86, 179); }
+
+        .btn-secondary { background: rgb(51, 51, 51); color: rgb(204, 204, 204); }
+        .btn-secondary:hover:not(:disabled) { background: rgb(68, 68, 68); }
+
+        .btn-record { background: rgb(0, 200, 115); color: rgb(255, 255, 255); }
+        .btn-record:hover:not(:disabled) { background: rgb(0, 160, 90); }
+
+        .btn-stop { background: rgb(255, 82, 82); color: rgb(255, 255, 255); }
+        .btn-stop:hover:not(:disabled) { background: rgb(200, 50, 50); }
+
+        /*map container*/
+        #map {
+            width: 100%;
+            height: 380px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgb(51, 51, 51);
+            margin-bottom: 20px;
+            z-index: 1;
+        }
+
         /* Dashboard Layout*/
         .stats-grid {
             display: grid;
@@ -84,28 +125,12 @@
             width: 90%;
             border: 1px solid rgb(51, 51, 51);
         }
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px; 
-            cursor: pointer;
-            font-weight: bold;
-            margin: 8px 4px;
-            font-family: inherit;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .btn-primary { background: rgb(0, 123, 255); color: rgb(255, 255, 255); }
-        .btn-primary:hover { background: rgb(0, 86, 179); }
-        .btn-secondary { background: rgb(51, 51, 51); color: rgb(204, 204, 204); }
-        .btn-secondary:hover { background: rgb(68, 68, 68); }
 
         #btModal .btn {
             display: flex;
             width: 100%;
             box-sizing: border-box;
+            margin: 8px 0;
         }
 
         #errorModal {
@@ -134,6 +159,22 @@
     <p>Welcome to Tabi-chan's website! Explore the adventures and stories of Tabi-chan as they travel the world.</p>
     <p id="statusTag">Status: Checking on Tabi-chan...</p>
 
+    <!-- map viewport -->
+    <div id="map"></div>
+
+    <div class="controls-row">
+        <button id="dashboardConnectBtn" class="btn btn-primary" onclick="handleDashboardButtonClick()">
+            Search for Tabi-chan
+        </button>
+        <button id="startBtn" class="btn btn-record" onclick="handleRecordClick()">
+            Start
+        </button>
+        <button id="stopBtn" class="btn btn-stop" onclick="stopTracking()" disabled>
+            Stop
+        </button>
+    </div>
+
+
     <!-- Bluetooth Search / Disconnect Button -->
      <button id="dashboardConnectBtn" class="btn btn-primary" onclick="handleDashboardButtonClick()">
         Search for Tabi-chan
@@ -152,6 +193,14 @@
         <div class="card">
             <h3>CURRENT PACE</h3>
             <p id="currentPace">--:-- /km</p>
+        </div>
+        <div class="card">
+            <h3>CURRENT ELEVATION</h3>
+            <p id="currentElevation">0 m</p>
+        </div>
+        <div class="card">
+            <h3>MOVING TIME</h3>
+            <p id="movingTime">00:00</p>
         </div>
     </div>
 
@@ -177,33 +226,76 @@
         </div>
     </div>
 
-    <script>
-        // Replace with actual UUIDs
-        const SERVICE_UUID = ' ';
-        const CHAR_UUID    = ' ';
+    <script src="app.js"></script>
 
-        let bleDevice = null;
-        let trackPoints = [];
-        let manualDisconnect = false;
-        
+    <script>       
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
         window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('btModal').classList.remove('hidden');
-            document.getElementById('statusTag').textContent = 'Status: Couldn\'t find Tabi-chan (Preview Mode)';
+
+            initMap('map', [3.0, 101.4], 15);
+
+            TrackerEvents.onDashboardUpdate = ({ totalDistanceKm, currentSpeedKmh, paceStr, elevationM }) => {
+                document.getElementById('totalDistance').textContent = `${totalDistanceKm} km`;
+                document.getElementById('currentSpeed').textContent = `${currentSpeedKmh} km/h`;
+                document.getElementById('currentPace').textContent = `${paceStr} /km`;
+                document.getElementById('currentElevation').textContent = `${elevationM} m`;
+            };
+
+            TrackerEvents.onTimerUpdate = (formattedTime) => {
+                document.getElementById('movingTime').textContent = formattedTime;
+            };
+
+            TrackerEvents.onStateChange = (state) => {
+                const startBtn = document.getElementById('startBtn');
+                const stopBtn = document.getElementById('stopBtn');
+
+                if (state === 'tracking') {
+                    startBtn.textContent = 'Pause';
+                    startBtn.className = 'btn btn-secondary';
+                    stopBtn.disabled = false;
+                } else if (state === 'paused') {
+                    startBtn.textContent = 'Resume';
+                    startBtn.className = 'btn btn-record';
+                    stopBtn.disabled = false;
+                } else {
+                    startBtn.textContent = 'Start';
+                    startBtn.className = 'btn btn-record';
+                    stopBtn.disabled = true;
+                }
+            };
+
+            TrackerEvents.onConnectionChange = (status) => {
+                const dashBtn = document.getElementById('dashboardConnectBtn');
+                const statusTag = document.getElementById('statusTag');
+
+                if (status === 'connected') {
+                    dashBtn.textContent = 'Disconnect from Tabi-chan';
+                    statusTag.textContent = 'Status: Connected to Tabi-chan';
+                    dismissMainModal();
+                } else if (status === 'connecting') {
+                    statusTag.textContent = 'Status: Searching for Tabi-chan...';
+                } else {
+                    dashBtn.textContent = 'Search for Tabi-chan';
+                    statusTag.textContent = 'Status: Disconnected from Tabi-chan';
+                }
+            };
+
         });
 
-        function reopenModal() {
-            document.getElementById('btModal').classList.remove('hidden');
-        }
-
-        // Toggles between Disconnect and Search Modal
         function handleDashboardButtonClick() {
             if (bleDevice?.gatt?.connected) {
-                manualDisconnect = true;
-                bleDevice.gatt.disconnect();
+                disconnectBLE();
             } else {
-                reopenModal();
+                document.getElementById('btModal').classList.remove('hidden');
+            }
+        }
+
+        function handleRecordClick() {
+            if (currentState === TrackerState.TRACKING) {
+                pauseTracking();
+            } else {
+                startTracking();   
             }
         }
 
@@ -218,28 +310,15 @@
                 );
 
                 await Promise.all([
-                    Promise.race([connectBLE(), timeoutPromise]).catch(err => {
-                        return null; // Suppress immediate throw so sleep() runs
-                    }),
-                    sleep(1500) // Guarantees 1.5s search spinner animation
-                ]).then(([deviceResult]) => {
-                    if (!deviceResult && !bleDevice) throw new Error('Tabi-chan is either dead or too far');
-                });
-
-                isConnected = true;
+                    Promise.race([connectBLE(), timeoutPromise]),
+                    sleep(1200)  // Ensure the loading spinner is visible for at least 1.5 seconds
+                ]);
             } catch (error) {
                 console.warn('Tabi-chan is either dead or too far:', error.message);
-                isConnected = false;
-            }
-
-            setButtonLoading(false);
-
-            if (isConnected) {
-                dismissMainModal();
-                document.getElementById('dashboardConnectBtn').textContent = 'Disconnect from Tabi-chan';
-                document.getElementById('statusTag').textContent = 'Status: Connected to Tabi-chan';
-            } else {
+                console.error('Error during connection attempt:', error);
                 showErrorModal();
+            } finally {
+                setButtonLoading(false);        
             }
         }
 
@@ -264,23 +343,6 @@
             }
         }
 
-        async function connectBLE() {
-            bleDevice = await navigator.bluetooth.requestDevice({
-                filters: [{ services: [SERVICE_UUID] }]
-            });
-
-            bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
-
-            const server = await bleDevice.gatt.connect();
-            const service = await server.getPrimaryService(SERVICE_UUID);
-            const characteristic = await service.getCharacteristic(CHAR_UUID);
-
-            await characteristic.startNotifications();
-            characteristic.addEventListener('characteristicvaluechanged', handleGpsPacket);
-
-            return bleDevice;
-        }
-
         function dismissMainModal() {
             document.getElementById('btModal').classList.add('hidden');
         }
@@ -293,15 +355,6 @@
             document.getElementById('errorModal').classList.add('hidden');
         }
 
-        // Clean up UI & variables when hardware drops or disconnects
-        function onDisconnected() {
-            document.getElementById('statusTag').textContent = 'Status: Tabi-chan Disconnected';
-            document.getElementById('btModal').classList.remove('hidden');
-        }
-
-        function handleGpsPacket(event) {
-            console.log('GPS Data:', event.target.value);
-        }
     </script>
 </body>
 </html>
