@@ -144,6 +144,13 @@ void setup() {
     Serial.begin(115200);
     gpsSerial.begin(GPS_BAUD, SERIAL_8N1, RX_PIN, TX_PIN);
 
+    pinMode(BATTERY_ADC_PIN, INPUT);
+    analogReadResolution(12); // Set ADC resolution to 12 bits (0-4095)
+
+    display.init(115200, true, 2, false);
+    display.setRotation(1); // Adjust rotation as needed
+    renderScreen(true); // Full refresh on startup
+
     Serial.println("\n[Init] Waking up Tabi-chan...");
 
     BLEDevice::init("Tabi-chan");
@@ -223,5 +230,17 @@ void loop() {
         //Notify web app with binary byte array
         pCharacteristic->setValue((uint8_t*)&gpsData, sizeof(GpsData));
         pCharacteristic->notify();
+    }
+
+    if (currentMillis - lastEpdUpdateTime >= EPD_UPDATE_INTERNAL_MS) {
+        lastEpdUpdateTime = currentMilliis;
+        epdPartialRefreshCount++;
+
+        if (epdPartialRefreshCount >= EPD_FULL_REFRESH_CYCLE) {
+            epdPartialRefreshCount = 0;
+            renderScreen(true); // Full refresh
+        } else {
+            renderScreen(false); // Partial refresh
+        }
     }
 }
