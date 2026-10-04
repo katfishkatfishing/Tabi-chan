@@ -76,32 +76,71 @@
         /* Dashboard Layout*/
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 20px;
+            grid-template-columns: repeat(autofit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
         }
         .card {
             background: rgb(122, 84, 122);
-
-
-
-            padding: 20px;
+            padding: 16px;
             border-radius: 10px;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
         .card h3 {
             margin: 0;
-            color: rgb(255, 255, 255);
-            font-size: 12px;
+            color: rgb(230, 230, 230);
+            font-size: 11px;
             letter-spacing: 1px;
+            text-transform: uppercase;
         }
         .card p {
-            margin: 10px 0 0;
-            font-size: 24px;
-            font-weight: bold;
+            margin: 8px 0 0;
+            font-size: 22px;
+            font-weight: 600;
             color: rgb(0, 255, 128);
         }
+
+        .overview-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px
+        }
+        @media (max-width: 600px) {
+            .overview-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .overview-card {
+            background: rgb(95, 50, 95);
+            padding: 16px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .overview-card h3 {
+            margin: 0 0 6px 0;
+            color: rgb(230, 230, 230);
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .overview-card .overview-main {
+            font-size: 20px;
+            font-weight: 600;
+            color: rgb(255, 230, 109);
+            margin: 0;
+        }
+
+        .overview-card .overview-sub {
+            font-size: 13px;
+            color: rgb(220, 220, 220);
+            margin: 4px 0 0 0;
+        }
+
 
         /* Modal Styles */
         .modal-overlay {
@@ -174,6 +213,22 @@
         </button>
     </div>
 
+        <!-- Weather and geoOverview -->
+    <div class="overview-panel">
+        <div class="overview-card">
+            <h3>Location Overview</h3>
+            <p class="placeMain" id="overview-main">Tabi-chan is getting the location...</p>
+            <p class="placeSub" id="overview-sub">Tabi-chan is waiting for the location...</p>
+        </div>
+        <div class="overview-card">
+            <h3>Live Weather</h3>
+            <p class="weatherMain" id="overviewMain">--°C</p>
+            <p class="weatherSub" id="overviewSub">Tabi-chan is checking the weather...</p>
+        </div>
+    </div>
+
+
+
     <!-- Telemetry Dashboard -->
     <div class="stats-grid">
         <div class="card">
@@ -228,6 +283,16 @@
         window.addEventListener('DOMContentLoaded', () => {
 
             initMap('map', [3.0, 101.4], 15);
+
+            TrackerEvents.onEnvirontmentUpdate = ({ place, weather}) => {
+                if (place) {
+                    document.getElementById('placeMain').textContent = place.city || place.name || 'Tabi-chan does not know where this is...';
+                    document.getElementById('placeSub').textContent = [place.suburb, place.state, place.country].filter(Boolean).join(', ');
+
+                    document.getElementById('weatherMain').textContent = `${weather.tempC}°C, ${weather.condition}`;
+                    document.getElementById('weatherSub').textContent = `Wind: ${weather.windSpeed} km/h • Humidity: ${weather.humidity}%`;
+                }
+            }
 
             TrackerEvents.onDashboardUpdate = ({ totalDistanceKm, currentSpeedKmh, paceStr, elevationM }) => {
                 document.getElementById('totalDistance').textContent = `${totalDistanceKm} km`;

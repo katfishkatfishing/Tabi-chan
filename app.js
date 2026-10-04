@@ -27,6 +27,12 @@ let routePolyline = null;
 let currentPositionMarker = null;
 let isMapAutoPanEnabled = true;
 
+//weather and geocode cache
+let lastEnvFetchTime = 0;
+letlastEnvCoords = null;
+const ENV_FETCH_INTERVAL_MS = 3 * 60 * 1000;
+const ENV_MIN_MOVE_METERS = 1000;
+
 //Ui event hooks
 const TrackerEvents = {
     onConnectionChange: (status) => {},
@@ -35,6 +41,95 @@ const TrackerEvents = {
     onDashboardUpdate: (stats) => {},
     onTimerUpdate: (formattedTime, totalSeconds) => {}
 };
+
+//weather and reverse geocoding 
+const WMO_CODE_MAP = {
+    0: 'Clear sky',
+    1: 'Mainly clear',
+    2: 'Partly cloudy',
+    3: 'Overcast',
+    45: 'Foggy',
+    48: 'Depositing rime fog',
+    51: 'Light drizzle',
+    53: 'Moderate drizzle',
+    55: 'Dense drizzle',
+    61: 'Slight rain',
+    63: 'Moderate rain',
+    65: 'Heavy rain',
+    71: 'Slight snow fall',
+    73: 'Moderate snow fall',
+    75: 'Heavy snow fall',
+    80: 'Slight rain showers',
+    81: 'Moderate rain showers',
+    82: 'Violent rain showers',
+    95: 'Thunderstorm',
+    96: 'Thunderstorm with slight hail',
+    99: 'Thunderstorm with heavy hail'
+};
+
+
+async function fetchPlaceAndWeather(lat, lon) {
+    const results = { place: null, weather: null};
+
+    try {
+        const geoUrl = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lon;
+        const geoResponse = await fetch(geoUrl, { headers: { 'Accept': 'application/json'} });
+        if (geoResponse.ok) {
+            const geoData = await geoResponse.json();
+            const address = geoData.address || {};
+            results.place = {
+                name: address.road || address.neighbourhood || address.suburb || geoData.name,
+                suburb: address.suburb || address.neighbourhood || '',
+                city: address.city || address.town || address.village || address.county || '',
+                state: address.state || '',
+                country: address.country || ''
+            };
+        }
+    } catch (error) {
+        console.warn('Geocoding lookup failed:', error);    
+    }
+
+    try {
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+        const weatherResponse = await fetch(weatherUrl);
+        if (weatherResponse.ok) {
+            const weatherData = await weatherResponse.json();
+            const currentWeather = weatherData.current_weather;
+            results.weather = {
+                temp: Math.round(currentWeather.temperature_2m),
+                humidity: currentWeather.relativehumidity_2m,
+                windSpeed: Math.round(currentWeather.windspeed_10m),
+                windDir: WMO_CODE_MAP[currentWeather.weather_code] || 'Clear'
+            };
+        }
+    } catch (error) {
+        console.warn('Weather lookup failed:', error);
+    }
+    if (results.place || results.weather) {
+        TrackerEvents.onEnvironmentUpdate(results);
+    }
+}
+
+function  checkAndTriggerEnvironmentUpdate(lat, lon) {
+    const now = Date.now();
+    const shouldFetch = false;
+
+    if (!lastEnvCoords) {
+        shouldFetch = true;
+    } else {
+        const timeDiff = now - lastEnvUpdateTime;
+        const distDiff = haversineDistance(lastEnvCoords.lat, lastEnvCoords.lon, lat, lon);
+        if (timeDiff >= ENV_FETCH_INTERVAL_MS || distDiff >= ENV_MIN_MOVE_METERS) {
+            shouldFetch = true;
+        }
+    }
+
+    if (shouldFetch) {
+        lastEnvUpdateTime = now;
+        lastEnvCoords = { lat, lon };
+        fetchPlaceAndWeather(lat, lon);
+    }
+}
 
 //leaflet map initialisation
 
@@ -171,6 +266,8 @@ function handleGpsPacket(event) {
     updateMapPosition(point);
 
     TrackerEvents.onGpsUpdate(point);
+
+    checkAndTriggerEnvironmentUpdate(lat, lon);
 
     if (currentState === TrackerState.TRACKING) {
         recordPoint(point);
