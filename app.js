@@ -1,5 +1,5 @@
-const SERVICE_UUID = '';
-const CHAR_UUID    = '';
+const SERVICE_UUID = '34c4a5d7-21bf-4f62-813e-cc463154b3b7';
+const CHAR_UUID    = '9cfab8e8-1803-414e-b56e-163ac55e6548';
 
 const  MIN_SPEED_THRESHOLD = 0.3; // Minimum speed in m/s to consider for pace calculation
 const MIN_DISTANCE_THRESHOLD = 1.5; // Minimum distance in meters to consider for distance calculation
