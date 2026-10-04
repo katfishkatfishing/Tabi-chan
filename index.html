@@ -3,77 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tabi-chan</title>    <!-- Hello World! -->
-
+    <title>Tabi-chan</title>
+    <link href='https://fonts.googleapis.com/css?family=Fredoka' rel='stylesheet'>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <link href='https://fonts.googleapis.com/css?family=Fredoka' rel='stylesheet'>
     <style>
         body {
             font-family: 'Fredoka', sans-serif;
-            background-color: rgb(67, 12, 67);
             color: rgb(255, 255, 255);
             margin: 0; 
             padding: 20px;
-            max-width: 900px;
-            margin-left: auto;
-            margin-right: auto;
+            min-height: 100vh;
+            box-sizing: border-box;
+
+            /* Animated Dynamic Gradient Background */
+            background: linear-gradient(-45deg, #1b002c, #430c43, #2b0938, #18032b, #4b1259);
+            background-size: 400% 400%;
+            animation: samsungGradient 12s ease infinite;
+        }
+
+        @keyframes samsungGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         h1 { margin-bottom: 5px; }
         #statusTag { color: rgb(204, 204, 204); margin-bottom: 25px; }
         
-        /*buttons*/
+        /* Dashboard Layout*/
         .controls-row {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
-
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: inherit;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: background-color 0.3s, opacity 0.3s ease;
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .btn-primary { background: rgb(0, 123, 255); color: rgb(255, 255, 255); }
-        .btn-primary:hover:not(:disabled) { background: rgb(0, 86, 179); }
-
-        .btn-secondary { background: rgb(51, 51, 51); color: rgb(204, 204, 204); }
-        .btn-secondary:hover:not(:disabled) { background: rgb(68, 68, 68); }
-
-        .btn-record { background: rgb(0, 200, 115); color: rgb(255, 255, 255); }
-        .btn-record:hover:not(:disabled) { background: rgb(0, 160, 90); }
-
-        .btn-stop { background: rgb(255, 82, 82); color: rgb(255, 255, 255); }
-        .btn-stop:hover:not(:disabled) { background: rgb(200, 50, 50); }
-
-        /*map container*/
-        #map {
-            width: 100%;
-            height: 380px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgb(51, 51, 51);
-            margin-bottom: 20px;
-            z-index: 1;
-        }
-
-        /* Dashboard Layout*/
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -81,14 +44,14 @@
             margin-top: 20px;
         }
         .card {
-            background: rgb(122, 84, 122);
-
-
-
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             padding: 20px;
             border-radius: 10px;
             text-align: center;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.3);
         }
         .card h3 {
             margin: 0;
@@ -125,6 +88,35 @@
             width: 90%;
             border: 1px solid rgb(51, 51, 51);
         }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px; 
+            cursor: pointer;
+            font-weight: bold;
+            margin: 8px 4px;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background-color 0.3s, opacity 0.3s ease;
+        }
+        .btn-primary { background: rgb(0, 123, 255); color: rgb(255, 255, 255); }
+        .btn-primary:hover:not(:disabled) { background: rgb(0, 86, 179); }
+
+        .btn-secondary { background: rgb(51, 51, 51); color: rgb(204, 204, 204); }
+        .btn-secondary:hover:not(:disabled) { background: rgb(68, 68, 68); }
+
+        .btn-record { background: rgb(0, 200, 115); color: rgb(255, 255, 255); }
+        .btn-record:hover:not(:disabled) { background: rgb(0, 160, 90); }
+
+        .btn-stop { background: rgb(255, 82, 82); color: rgb(255, 255, 255); }
+        .btn-stop:hover:not(:disabled) { background: rgb(200, 50, 50); }
 
         #btModal .btn {
             display: flex;
@@ -135,6 +127,17 @@
 
         #errorModal {
             cursor: pointer;
+        }
+
+        /*map container*/
+        #map {
+            width: 100%;
+            height: 380px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgb(51, 51, 51);
+            margin-bottom: 20px;
+            z-index: 1;
         }
 
         /* CSS Spinner / Buffer Animation */
@@ -159,13 +162,15 @@
     <p>Welcome to Tabi-chan's website! Explore the adventures and stories of Tabi-chan as they travel the world.</p>
     <p id="statusTag">Status: Checking on Tabi-chan...</p>
 
+    <!-- Bluetooth Search / Disconnect Button -->
+    <button id="dashboardConnectBtn" class="btn btn-primary" onclick="handleDashboardButtonClick()">
+        Search for Tabi-chan
+    </button>
+
     <!-- map viewport -->
     <div id="map"></div>
 
     <div class="controls-row">
-        <button id="dashboardConnectBtn" class="btn btn-primary" onclick="handleDashboardButtonClick()">
-            Search for Tabi-chan
-        </button>
         <button id="startBtn" class="btn btn-record" onclick="handleRecordClick()">
             Start
         </button>
@@ -173,12 +178,6 @@
             Stop
         </button>
     </div>
-
-
-    <!-- Bluetooth Search / Disconnect Button -->
-     <button id="dashboardConnectBtn" class="btn btn-primary" onclick="handleDashboardButtonClick()">
-        Search for Tabi-chan
-    </button>
 
     <!-- Telemetry Dashboard -->
     <div class="stats-grid">
@@ -227,11 +226,14 @@
     </div>
 
     <script src="app.js"></script>
-
-    <script>       
+    <script>
+        let manualDisconnect = false;
+        
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
         window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btModal').classList.remove('hidden');
+            document.getElementById('statusTag').textContent = 'Status: Couldn\'t find Tabi-chan (Preview Mode)';
 
             initMap('map', [3.0, 101.4], 15);
 
@@ -280,14 +282,19 @@
                     statusTag.textContent = 'Status: Disconnected from Tabi-chan';
                 }
             };
-
         });
 
+        function reopenModal() {
+            document.getElementById('btModal').classList.remove('hidden');
+        }
+
+        // Toggles between Disconnect and Search Modal
         function handleDashboardButtonClick() {
             if (bleDevice?.gatt?.connected) {
-                disconnectBLE();
+                manualDisconnect = true;
+                bleDevice.gatt.disconnect();
             } else {
-                document.getElementById('btModal').classList.remove('hidden');
+                reopenModal();
             }
         }
 
@@ -310,15 +317,28 @@
                 );
 
                 await Promise.all([
-                    Promise.race([connectBLE(), timeoutPromise]),
-                    sleep(1200)  // Ensure the loading spinner is visible for at least 1.5 seconds
-                ]);
+                    Promise.race([connectBLE(), timeoutPromise]).catch(err => {
+                        return null; // Suppress immediate throw so sleep() runs
+                    }),
+                    sleep(1500) // Guarantees 1.5s search spinner animation
+                ]).then(([deviceResult]) => {
+                    if (!deviceResult && !bleDevice) throw new Error('Tabi-chan is either dead or too far');
+                });
+
+                isConnected = true;
             } catch (error) {
                 console.warn('Tabi-chan is either dead or too far:', error.message);
-                console.error('Error during connection attempt:', error);
+                isConnected = false;
+            }
+
+            setButtonLoading(false);
+
+            if (isConnected) {
+                dismissMainModal();
+                document.getElementById('dashboardConnectBtn').textContent = 'Disconnect from Tabi-chan';
+                document.getElementById('statusTag').textContent = 'Status: Connected to Tabi-chan';
+            } else {
                 showErrorModal();
-            } finally {
-                setButtonLoading(false);        
             }
         }
 
