@@ -21,6 +21,13 @@ Tabi-chan (旅-chan, the little traveler) connects embedded hardware with modern
             <b>Location Overview:</b> Queries OpenStreetMap's Nominatim API to resolve raw GPS coordinates into human-readable locations.</p>
         <p style="text-indent: -24px; margin-bottom: 5px">
             <b>Weather Overview:</b> Uses Open-Meteo API to fetch weather info.</p>
-            
+
+
+### Say hi to Tabi-chan
+<img width="814" height="696" alt="image" src="https://github.com/user-attachments/assets/f7d7c555-74e8-477e-823f-21f3d0015ca0" />
+
+<img width="779" height="711" alt="image" src="https://github.com/user-attachments/assets/78891822-f6b6-4e4a-b04c-4b23d0123aba" />
+
+
 
         
