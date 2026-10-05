@@ -4,7 +4,7 @@
 A travel companion that tracks and logs your journey, and provides the weather data, and geo data.
 
 ## 💠 Project Overview 💠
-An adorable little travel companion that lives in a small device that has a e-ink display and a GPS sensor.
+An adorable little travel companion that lives in a small device that has an e-ink display and a GPS sensor.
 
 Tabi-chan (旅-chan, the little traveler) connects embedded hardware with modern web tech. Equipped with an onboard GPS receiver, battery monitoring, and an E-Ink screen showing Tabi-chan's facial expressions and status, it streams raw positioning data directly over BLE to a companion Progressive Web App (PWA) with live Leaflet mapping, GPX exports, and local weather lookup—no native app installs or proprietary cloud subscriptions required.
 
