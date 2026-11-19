@@ -41,6 +41,6 @@ Tabi-chan (旅-chan) is a little gps sensor that you can clip onto yourself when
 
 <img width="500" alt="image" src="https://github.com/user-attachments/assets/b8b68640-d955-4016-ac32-fe97c7fc25fe" />
 
-<img width="416" height="302" alt="image" src="https://github.com/user-attachments/assets/0e8aff74-76ca-45e9-9384-bb75a7e996ec" />
+<img width="500" alt="image" src="https://github.com/user-attachments/assets/0e8aff74-76ca-45e9-9384-bb75a7e996ec" />
 
 <img width="500" alt="image" src="https://github.com/user-attachments/assets/eca0782a-b5bd-4522-9717-1eb9e67ca52a" />
